@@ -1,2 +1,8 @@
-node_modules
+## Ignore these files & directories
 .DS_Store
+
+# Directories
+lib/config/
+__pycache__
+
+# Files
