@@ -2,6 +2,7 @@
 .DS_Store
 
 # Directories
+.ipynb_checkpoints/
 lib/config/
 __pycache__
 
