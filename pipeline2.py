@@ -2,23 +2,30 @@
 
 import json
 import petl as etl
-import quandl
 import configparser
 config = configparser.ConfigParser()
 config.read('./lib/config/config')
 
-data_sets = {
-	'FRED': ['GDP'],
-	'IRS': ['RETURNS_IND_CUR']
+api = {
+	'base_url': 'https://api.census.gov/data',
+	'series_prefix': '?series_id=',
+	'series': {
+		'Economic_Key_Stats': 'ewks',
+		'International_Trade': 'inittrade'
+	},
+	'api_key': '&api_key='+config.get('census.gov','api_key')
 }
+
+years = [year for year in range(2000,2010 +1)]
 
 def get_data(data_set):
 	write_file('./json/'+data_set.lower()+'.json', api_request(data_set) )
 
 def api_request(data_set):
-	import quandl as q
-	api_token = config.get('quandl','api_key')
-	return q.get(data_set,authtoken = api_token)
+	import requests as r
+	api_url = (api['base_url']+api['series_prefix']+api['series'][data_set]
+					+api['api_key']+api['file_type'])
+	return r.get(api_url).json()
 
 def write_file(filename,data):
 	with open(filename,'w') as f:
@@ -56,9 +63,9 @@ def load(data,data_set):
 	return
 
 def main():
-	request = 'FRED'
-	for data_set in data_sets[request]:
-		print(request+'/'+data_set)
+	print(years)
+	# for data_set in series:
+	# 	get_data(data_set)
 	# 	data = read_data(data_set)
 	# 	data = transform(data,data_set)
 	# 	load(data,data_set)
