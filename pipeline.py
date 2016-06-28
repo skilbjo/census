@@ -13,12 +13,13 @@ data_sets = {
 }
 
 def get_data(data_set):
-	write_file('./json/'+data_set.lower()+'.json', api_request(data_set) )
+	filename = data_set.lower().replace('/','_')
+	write_file('./json/'+filename+'.json', api_request(data_set) )
 
 def api_request(data_set):
 	import quandl as q
 	api_token = config.get('quandl','api_key')
-	return q.get(data_set,authtoken = api_token)
+	return q.get(data_set+'.json',authtoken = api_token).to_json()
 
 def write_file(filename,data):
 	with open(filename,'w') as f:
@@ -58,7 +59,8 @@ def load(data,data_set):
 def main():
 	request = 'FRED'
 	for data_set in data_sets[request]:
-		print(request+'/'+data_set)
+		# print(request+'/'+data_set)
+		data = get_data(request+'/'+data_set)
 	# 	data = read_data(data_set)
 	# 	data = transform(data,data_set)
 	# 	load(data,data_set)
