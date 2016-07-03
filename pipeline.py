@@ -2,7 +2,7 @@
 
 import json
 import petl as etl
-import quandl
+import pandas as pd
 import configparser
 config = configparser.ConfigParser()
 config.read('./lib/config/config')
@@ -14,16 +14,18 @@ data_sets = {
 
 def get_data(data_set):
 	filename = data_set.lower().replace('/','_')
-	write_file('./json/'+filename+'.json', api_request(data_set) )
+	return write_file('./json/'+filename+'.json', api_request(data_set) )
 
 def api_request(data_set):
 	import quandl as q
 	api_token = config.get('quandl','api_key')
-	return q.get(data_set+'.json',authtoken = api_token).to_json()
+	data = q.get(data_set,authtoken = api_token).to_json(date_format='iso')
+	# print(data)
+	return data
 
 def write_file(filename,data):
 	with open(filename,'w') as f:
-		return json.dump(data,f, sort_keys=True, indent=4)
+		return f.write(data)
 
 def read_data(data_set):
 	data = read_file('./json/'+data_set.lower()+'.json')
@@ -33,12 +35,22 @@ def read_file(filename):
 	with open(filename,'r') as f:
 		return json.load(f)
 
-def transform(data,data_set):
-	data = data['observations']
-	data = etl.fromdicts(data, header=['value','realtime_start','realtime_end','date'])
-	data = etl.cut(data,'date','value')	
-	data = etl.rename(data,{'date':'date','value': data_set.lower()})
-	data = etl.convert(data,data_set.lower(),lambda val: 0 if val == '.' else val)
+def transform_to_pandas(data):
+	data = pd.DataFrame(data)
+	data.reset_index(level=0, inplace=True)	
+	return data
+
+def transform_to_petl(data):
+	isodate = etl.dateparser('%Y-%m-%d')
+	data = etl.fromdataframe(data)
+	data = etl.rename(data,{'index':'Date','VALUE':'Value'})
+	data = etl.convert(data,{'Date': lambda d: d[:10]})
+	data = etl.convert(data,{'Date': lambda d: isodate(d) })
+	return data
+
+def transform(data):
+	data = transform_to_pandas(data)
+	data = transform_to_petl(data)
 	return data
 
 def load(data,data_set):
@@ -51,7 +63,8 @@ def load(data,data_set):
 		password	= config.get('rpi','passwd')
 	)
 	conn.autocommit = True
-	etl.appenddb(data,conn,data_set.lower())
+	# etl.appenddb(data,conn,data_set.lower())
+	etl.appenddb(data,conn,data_set.lower())	
 	conn.close()
 	print('Table {0} loaded.'.format(data_set))
 	return
@@ -59,11 +72,11 @@ def load(data,data_set):
 def main():
 	request = 'FRED'
 	for data_set in data_sets[request]:
-		# print(request+'/'+data_set)
-		data = get_data(request+'/'+data_set)
-	# 	data = read_data(data_set)
-	# 	data = transform(data,data_set)
-	# 	load(data,data_set)
+		get_data(request+'/'+data_set)
+		data = read_data(request+'_'+data_set)
+		data = transform(data)
+		print(data)
+		load(data,data_set)
 
 if __name__ == '__main__':
 	main()

@@ -15,3 +15,9 @@ Using FRED, Quandl, and other finance-related data api service providers to gath
 - [ ] http://www.census.gov/developers/
 - [ ] http://api.census.gov/data.html
 - [ ] https://www.quandl.com/tools/python
+
+### Testing the API
+
+`curl https://www.quandl.com/api/v3/datasets/IRS/RETURNS_IND_CUR.json?api_key=ffPxX-CqufQcc2Lj-py5 | jq .`
+
+
